@@ -18,13 +18,25 @@ const api = axios.create({
  * @returns Document ID and initial status
  */
 export const uploadDocument = async (file: File): Promise<DocumentStatus> => {
-  // Create form data for file upload
   const formData = new FormData();
   formData.append('file', file);
 
-  // TODO: Implement the request to upload a document
-  // The endpoint should be POST /api/documents
-  // Make sure to handle errors appropriately
+  try {
+    const response = await api.post('/api/documents', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    return {
+      document_id: response.data.document_id,
+      status: response.data.status,
+      filename: response.data.filename,
+      progress: response.data.progress,
+      started_at: response.data.started_at,
+    };
+  } catch (error: any) {
+    console.error('Upload failed:', error);
+    throw new Error(error.response?.data?.error ?? 'Failed to upload document');
+  }
 };
 
 /**
@@ -36,9 +48,13 @@ export const uploadDocument = async (file: File): Promise<DocumentStatus> => {
 export const getDocumentStatus = async (
   documentId: string
 ): Promise<DocumentStatus> => {
-  // TODO: Implement the request to get document status
-  // The endpoint should be GET /api/documents/{documentId}
-  // Make sure to handle errors appropriately
+  try {
+    const response = await api.get(`/api/documents/${documentId}`);
+    return response.data as DocumentStatus;
+  } catch (error: any) {
+    console.error('Status check failed:', error);
+    throw new Error(error.response?.data?.error ?? 'Failed to get document status');
+  }
 };
 
 export default api;

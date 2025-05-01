@@ -26,12 +26,12 @@ const App: React.FC = () => {
   const handleUpload = async (file: File) => {
     setIsUploading(true);
     setError(null);
-
+  
     try {
-      // TODO: Implement upload logic using the API service
-      // 1. Call uploadDocument from api.ts
-      // 2. Set the documentId from the response
-      // 3. Set initial document status
+      const response = await uploadDocument(file);
+      console.log("Response", response)
+      setDocumentId(response.document_id);
+      setDocumentStatus(response); // this contains { document_id, status }
     } catch (err) {
       setError('Failed to upload document. Please try again.');
     } finally {
@@ -44,8 +44,10 @@ const App: React.FC = () => {
     if (!documentId || isConnected) return;
 
     const pollInterval = setInterval(async () => {
+      console.log("Polling")
       try {
         const status = await getDocumentStatus(documentId);
+        console.log("Status", status)
         setDocumentStatus(status);
 
         // Stop polling if processing is complete
