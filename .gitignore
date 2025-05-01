@@ -2,3 +2,7 @@
 /frontend/node_modules
 *.pyc
 __pycache__
+*/*/__pycache__
+**/build
+**/dist
+**/*.egg-info
