@@ -11,13 +11,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   status,
   isConnected,
 }) => {
-  // TODO: Implement the progress bar component
-  // The component should:
-  // 1. Show progress visually
-  // 2. Display status text
-  // 3. Handle different statuses (processing, analyzing, complete, error)
-  // 4. Show connection status indicator
-
   const normalizedProgress = Math.min(Math.max(progress, 0), 1);
   const percent = Math.round(normalizedProgress * 100);
 

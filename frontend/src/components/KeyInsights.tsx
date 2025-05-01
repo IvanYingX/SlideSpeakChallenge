@@ -6,12 +6,6 @@ interface KeyInsightsProps {
 }
 
 const KeyInsights: React.FC<KeyInsightsProps> = ({ insights }) => {
-  // TODO: Implement the key insights component
-  // The component should:
-  // 1. Display a list of insights with confidence scores
-  // 2. Group insights by category if available
-  // 3. Show empty state if no insights available
-
   if (!insights || insights.length === 0) {
     return (
       <div className="bg-gray-50 rounded-lg p-4 text-center">

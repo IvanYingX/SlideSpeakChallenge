@@ -7,14 +7,6 @@ interface ResultsViewProps {
 }
 
 const ResultsView: React.FC<ResultsViewProps> = ({ result }) => {
-  // TODO: Implement the results view component
-  // The component should:
-  // 1. Display document details (filename, word count, processing time)
-  // 2. Show key insights using the KeyInsights component
-  // 3. Display sentiment score with visual indicator
-  // 4. Show topics as tags
-  // 5. Include error state if result has an error
-
   if (result.error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
