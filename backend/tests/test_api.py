@@ -20,7 +20,7 @@ def test_root_endpoint():
     assert response.json() == {"status": "ok", "service": "AI Document Analyzer API"}
 
 
-@patch("app.main.process_document")
+@patch("app.routes.documents.process_document")
 def test_upload_document(mock_process):
     """Test document upload endpoint"""
     # Mock the process_document function to avoid actual processing
@@ -46,7 +46,7 @@ def test_upload_document(mock_process):
     assert response.json()["status"] == "processing"
 
 
-@patch("app.main.get_document_status")
+@patch("app.routes.documents.get_document_status")
 def test_get_document_status(mock_get_status):
     """Test document status endpoint"""
     # Mock the get_document_status function
@@ -81,18 +81,18 @@ def test_get_document_status(mock_get_status):
     assert "result" in response.json()
 
 
-@patch("app.main.get_document_status")
+@patch("app.routes.documents.get_document_status")
 def test_get_nonexistent_document(mock_get_status):
     """Test retrieving a document that doesn't exist"""
     # Mock the function to raise an exception
-    mock_get_status.side_effect = KeyError("Document not found")
+    mock_get_status.side_effect = KeyError("Document with ID nonexistent-id not found.")
 
     # Test the status endpoint with a non-existent document
     response = client.get("/api/documents/nonexistent-id")
 
     # Check response is a 404 error
     assert response.status_code == 404
-    assert "error" in response.json()
+    assert response.json()["detail"] == {"error": "Document with ID nonexistent-id not found."}
 
 
 # Note: WebSocket testing is more complex and typically requires
