@@ -16,6 +16,7 @@ from app.services.ai_service import (
     extract_key_insights,
     extract_text_from_document,
 )
+from app.models.errors import AIServiceError
 
 logger = logging.getLogger(__name__)
 
@@ -79,9 +80,9 @@ async def process_document(
         for i, chunk in enumerate(chunks):
             await progress_callback(ProgressUpdate(
                 document_id=document_id,
-                progress=0.1 + (i / len(chunks)),
-                status="processing",
-                message="Analyzing text chunk",
+                progress=0.1 + (i / len(chunks) * 0.7),
+                status="analyzing",
+                message=f"Analyzing text chunk {i + 1} of {len(chunks)}",
             ))
             analysis = await analyze_text_chunk(chunk)
             analysis_results.append(analysis)
@@ -89,7 +90,7 @@ async def process_document(
         await progress_callback(ProgressUpdate(
             document_id=document_id,
             progress=0.8,
-            status="processing",
+            status="analyzing",
             message="Extracting key insights",
         ))
         key_insights: List[KeyInsight] = []
@@ -119,6 +120,33 @@ async def process_document(
             progress=1.0,
             status="complete",
             message="Document processed successfully",
+        ))
+
+        return result
+    
+    except AIServiceError as e:
+        error_message = str(e)
+        print("Error: ", error_message)
+        result = AnalysisResult(
+            document_id=document_id,
+            filename=filename,
+            word_count=0,
+            processing_time_seconds=time.time() - start_time,
+            key_insights=[],
+            error=error_message,
+        )
+
+        document_store[document_id] = {
+            "status": "error",
+            "result": result,
+            "completed_at": datetime.now(),
+        }
+
+        await progress_callback(ProgressUpdate(
+            document_id=document_id,
+            progress=1.0,
+            status="error",
+            message=error_message,
         ))
 
         return result
