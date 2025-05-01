@@ -56,7 +56,9 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       <div className="flex items-center mb-2">
         <div
           className={`w-2 h-2 rounded-full mr-2 ${
-            isConnected ? 'bg-green-500' : 'bg-red-500'
+            isConnected 
+              ? 'bg-green-500 animate-pulse' 
+              : 'bg-red-500'
           }`}
         />
         <span className="text-xs text-gray-500">
