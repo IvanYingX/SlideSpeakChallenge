@@ -8,9 +8,8 @@ document processing pipeline.
 
 from typing import List, Dict, Any, Callable, Coroutine, Optional
 import time
-import uuid
 import logging
-
+from datetime import datetime
 from app.models.schemas import ProgressUpdate, AnalysisResult, KeyInsight
 from app.services.ai_service import (
     analyze_text_chunk,
@@ -21,7 +20,10 @@ from app.services.ai_service import (
 logger = logging.getLogger(__name__)
 
 
-# TODO: Implement this function
+# In-memory storage for document results
+# In a real application, this would be a database
+document_store: Dict[str, Any] = {}
+
 async def chunk_document(text: str, chunk_size: int = 1000) -> List[str]:
     """
     Split document text into manageable chunks for processing
@@ -34,10 +36,9 @@ async def chunk_document(text: str, chunk_size: int = 1000) -> List[str]:
         List of text chunks
     """
     # Your implementation here
-    pass
+    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
 
-# TODO: Implement this function
 async def process_document(
     file_content: bytes,
     filename: str,
@@ -62,16 +63,95 @@ async def process_document(
         AnalysisResult object with the complete analysis
     """
     # Your implementation here
-    pass
+    try:
+        start_time = time.time()
+        await progress_callback(ProgressUpdate(
+            document_id=document_id,
+            progress=0.0,
+            status="processing",
+            message="Extracting text from document",
+        ))
+        text = await extract_text_from_document(file_content)
+
+        chunks = await chunk_document(text)
+
+        analysis_results = []
+        for i, chunk in enumerate(chunks):
+            await progress_callback(ProgressUpdate(
+                document_id=document_id,
+                progress=0.1 + (i / len(chunks)),
+                status="processing",
+                message="Analyzing text chunk",
+            ))
+            analysis = await analyze_text_chunk(chunk)
+            analysis_results.append(analysis)
+
+        await progress_callback(ProgressUpdate(
+            document_id=document_id,
+            progress=0.8,
+            status="processing",
+            message="Extracting key insights",
+        ))
+        key_insights: List[KeyInsight] = []
+        for analysis in analysis_results:
+            insights = await extract_key_insights(analysis)
+            key_insights.extend(insights)
+
+        # Combine results
+        result = AnalysisResult(
+            document_id=document_id,
+            filename=filename,
+            word_count=len(text.split()),
+            sentiment_score=analysis_results[0]["sentiment_score"],
+            topics=analysis_results[0]["topics"],
+            processing_time_seconds=time.time() - start_time,
+            key_insights=key_insights,
+        )
+
+        document_store[document_id] = {
+            "status": "complete",
+            "result": result,
+            "completed_at": datetime.now(),
+        }
+
+        await progress_callback(ProgressUpdate(
+            document_id=document_id,
+            progress=1.0,
+            status="complete",
+            message="Document processed successfully",
+        ))
+
+        return result
+
+    except Exception as e:
+        error_message = f"Error processing document: {e}"
+
+        result = AnalysisResult(
+            document_id=document_id,
+            filename=filename,
+            word_count=0,
+            processing_time_seconds=time.time() - start_time,
+            key_insights=[],
+            error=error_message,
+        )
+
+        document_store[document_id] = {
+            "status": "error",
+            "result": result,
+            "completed_at": datetime.now(),
+        }
+
+        await progress_callback(ProgressUpdate(
+            document_id=document_id,
+            progress=1.0,
+            status="error",
+            message=error_message,
+        ))
+
+        return result
 
 
-# In-memory storage for document results
-# In a real application, this would be a database
-document_store: Dict[str, Any] = {}
-
-
-# TODO: Implement this function
-async def get_document_status(document_id: str):
+async def get_document_status(document_id: str) -> Optional[Dict[str, Any]]:
     """
     Get the current status of a document
 
@@ -82,4 +162,6 @@ async def get_document_status(document_id: str):
         Document status information
     """
     # Your implementation here
-    pass
+    if document_id not in document_store:
+        raise KeyError(f"Document with ID {document_id} not found.")
+    return document_store[document_id]
