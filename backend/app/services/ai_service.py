@@ -8,9 +8,8 @@ the behavior of real AI services in production.
 import asyncio
 import random
 from typing import List, Dict, Any
-
+from app.models.errors import AIServiceError
 from app.models.schemas import KeyInsight
-
 
 async def extract_text_from_document(file_content: bytes) -> str:
     """
@@ -30,7 +29,7 @@ async def extract_text_from_document(file_content: bytes) -> str:
 
     # Simulate occasional extraction errors
     if random.random() < 0.05:  # 5% chance of error
-        raise Exception(
+        raise AIServiceError(
             "Failed to extract text from document: Service temporarily unavailable"
         )
 
@@ -84,7 +83,7 @@ async def analyze_text_chunk(text: str) -> Dict[str, Any]:
 
     # Simulate occasional AI service errors
     if random.random() < 0.08:  # 8% chance of error
-        raise Exception("AI analysis failed: Model service temporarily unavailable")
+        raise AIServiceError("AI analysis failed: Model service temporarily unavailable")
 
     # Randomly generate analysis results
     words = text.split()
@@ -132,7 +131,7 @@ async def extract_key_insights(text: str, count: int = 5) -> List[KeyInsight]:
 
     # Simulate occasional errors
     if random.random() < 0.05:  # 5% chance of error
-        raise Exception("Failed to extract insights: ML pipeline error")
+        raise AIServiceError("Failed to extract insights: ML pipeline error")
 
     # Generate random insights based on common business topics
     potential_insights = [

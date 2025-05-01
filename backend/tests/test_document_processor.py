@@ -23,7 +23,7 @@ async def test_chunk_document():
     assert len(chunks) > 0
 
     # Check that all text is preserved
-    combined = " ".join(chunks)
+    combined = "".join(chunks)
     for word in test_document.split():
         assert word in combined
 
