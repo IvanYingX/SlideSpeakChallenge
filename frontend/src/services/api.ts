@@ -25,7 +25,6 @@ export const uploadDocument = async (file: File): Promise<DocumentStatus> => {
     const response = await api.post('/api/documents', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-
     return {
       document_id: response.data.document_id,
       status: response.data.status,
@@ -34,8 +33,7 @@ export const uploadDocument = async (file: File): Promise<DocumentStatus> => {
       started_at: response.data.started_at,
     };
   } catch (error: any) {
-    console.error('Upload failed:', error);
-    throw new Error(error.response?.data?.error ?? 'Failed to upload document');
+    throw new Error(error.response?.data?.detail?.error ?? 'Failed to upload document');
   }
 };
 
