@@ -27,7 +27,7 @@ export interface AnalysisResult {
 export interface DocumentStatus {
   document_id: string;
   filename: string;
-  status: string;
+  status: 'processing' | 'analyzing' | 'complete' | 'error';
   progress: number;
   started_at: string;
   completed_at?: string;

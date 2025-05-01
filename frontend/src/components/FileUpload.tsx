@@ -8,15 +8,6 @@ interface FileUploadProps {
 
 const FileUpload: React.FC<FileUploadProps> = ({ onUpload, isLoading }) => {
   const [error, setError] = useState<string | null>(null);
-
-  // TODO: Implement the file upload component
-  // The component should:
-  // 1. Accept file drops and clicks
-  // 2. Validate files (e.g., file type, size)
-  // 3. Show drag/drop visual feedback
-  // 4. Display errors if any
-  // 5. Call onUpload when a valid file is selected
-
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       setError(null);

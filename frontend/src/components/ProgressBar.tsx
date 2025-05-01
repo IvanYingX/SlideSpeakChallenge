@@ -1,24 +1,24 @@
 import React from 'react';
-
+import ResetButton from './ResetButton';
+import RetryButton from './RetryButton';
 interface ProgressBarProps {
   progress: number; // 0 to 1
   status: string;
   isConnected: boolean;
+  message: string | null;
+  handleReset: () => void;
+  handleRetry: () => void;
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({
   progress,
   status,
   isConnected,
+  message,
+  handleReset,
+  handleRetry,
 }) => {
-  // TODO: Implement the progress bar component
-  // The component should:
-  // 1. Show progress visually
-  // 2. Display status text
-  // 3. Handle different statuses (processing, analyzing, complete, error)
-  // 4. Show connection status indicator
-
-  const normalizedProgress = Math.min(Math.max(progress, 0), 1);
+  const normalizedProgress = Math.min(Math.max(progress || 0, 0), 1);
   const percent = Math.round(normalizedProgress * 100);
 
   // Map status to display text and styles
@@ -100,9 +100,16 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       )}
 
       {status === 'error' && (
-        <div className="text-center text-xs text-red-500">
-          <p>There was an error processing your document. Please try again.</p>
-        </div>
+        <>
+          <div className="text-center text-xs text-red-500">
+            <p>{message ?? "There was an error processing your document. Please try again."}</p>
+          </div>
+          <RetryButton handleRetry={handleRetry} />
+          <div className="text-center text-xs text-gray-500">
+            or
+          </div>
+          <ResetButton handleReset={handleReset} />
+        </>
       )}
     </div>
   );

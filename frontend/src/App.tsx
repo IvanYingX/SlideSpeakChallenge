@@ -5,16 +5,17 @@ import ResultsView from './components/ResultsView';
 import ErrorAlert from './components/ErrorAlert';
 import { uploadDocument, getDocumentStatus } from './services/api';
 import { useDocumentProgress } from './hooks/useWebSocket';
-import { DocumentStatus, AnalysisResult } from './types';
-
+import { DocumentStatus } from './types';
+import ResetButton from './components/ResetButton';
 const App: React.FC = () => {
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [documentStatus, setDocumentStatus] = useState<DocumentStatus | null>(
     null
   );
+  const [progressMessage, setProgressMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   // Connect to WebSocket for real-time updates
   const {
     updates,
@@ -24,16 +25,33 @@ const App: React.FC = () => {
 
   // Handle file upload
   const handleUpload = async (file: File) => {
+    setUploadedFile(file);
     setIsUploading(true);
     setError(null);
-
     try {
-      // TODO: Implement upload logic using the API service
-      // 1. Call uploadDocument from api.ts
-      // 2. Set the documentId from the response
-      // 3. Set initial document status
-    } catch (err) {
-      setError('Failed to upload document. Please try again.');
+      const response = await uploadDocument(file);
+      console.log("Response", response)
+      setDocumentId(response.document_id);
+      setDocumentStatus(response); // this contains { document_id, status }
+    } catch (error) {
+      const err = error as { 
+        response?: { 
+          data?: { 
+            detail?: { error?: string },
+            error?: string 
+          } 
+        },
+        message?: string 
+      };
+      console.log("Error", err);
+      
+      const errorMessage =
+        err.response?.data?.detail?.error ??
+        err.response?.data?.error ??
+        err.message ??
+        'Failed to upload document. Please try again.';
+
+      setError(errorMessage);
     } finally {
       setIsUploading(false);
     }
@@ -66,7 +84,8 @@ const App: React.FC = () => {
 
     setDocumentStatus((prev) => {
       if (!prev) return prev;
-
+      console.log("Updates", updates);
+      setProgressMessage(updates.message ?? null);
       return {
         ...prev,
         status: updates.status,
@@ -89,13 +108,27 @@ const App: React.FC = () => {
     setError(null);
   };
 
+  // In case the analysis fails, the user can retry with the same file
+  const handleRetry = async () => {
+    if (!uploadedFile) return;
+  
+    // Clear error/status and try again
+    setError(null);
+    setDocumentStatus(null);
+    setDocumentId(null);
+  
+    await handleUpload(uploadedFile);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-lg font-semibold text-gray-900">
-            AI Presentation Analyzer
-          </h1>
+          <button onClick={handleReset} className="text-gray-500 hover:text-gray-700">
+            <h1 className="text-lg font-semibold text-gray-900">
+              AI Presentation Analyzer
+            </h1>
+          </button>
         </div>
       </header>
 
@@ -137,27 +170,23 @@ const App: React.FC = () => {
                     progress={documentStatus.progress}
                     status={documentStatus.status}
                     isConnected={isConnected}
+                    message={progressMessage}
+                    handleReset={handleReset}
+                    handleRetry={handleRetry}
                   />
-
-                  <p className="text-sm text-gray-500 text-center mt-6">
-                    This may take a minute depending on document size
-                  </p>
+                  {documentStatus.status !== 'error' && (
+                    <p className="text-sm text-gray-500 text-center mt-6">
+                      This may take a minute depending on document size
+                    </p>
+                  )}
                 </div>
               ) : null}
 
-              {documentStatus && documentStatus.result && (
+              {documentStatus?.result && (
                 // Show results when complete
                 <div>
                   <ResultsView result={documentStatus.result} />
-
-                  <div className="mt-6 text-center">
-                    <button
-                      onClick={handleReset}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      Analyze Another Document
-                    </button>
-                  </div>
+                  <ResetButton handleReset={handleReset} />
                 </div>
               )}
             </div>

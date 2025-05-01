@@ -14,11 +14,6 @@ export const useDocumentProgress = (documentId: string | null) => {
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
 
-  // TODO: Implement the custom hook
-  // The hook should establish a WebSocket connection when documentId is available
-  // It should handle connection status, updates, and errors
-  // It should clean up the connection when the component unmounts or documentId changes
-
   // Connect to WebSocket
   const connect = useCallback(() => {
     if (!documentId) return;
