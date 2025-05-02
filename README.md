@@ -24,6 +24,9 @@ cd slidespeak-document-processing-challenge
 
 # Build and start all services
 docker-compose up --build
+cd frontend
+pnpm install
+pnpm run dev
 ```
 
 This will launch the following services:
