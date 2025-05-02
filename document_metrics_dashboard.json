@@ -1,0 +1,195 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": null,
+    "title": "Document Processing Metrics",
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "5s",
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Documents Processed",
+        "id": 1,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "documents_processed_total"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ],
+            "fields": "",
+            "values": false
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Processing Errors",
+        "id": 2,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "document_processing_errors_total"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ],
+            "fields": "",
+            "values": false
+          }
+        }
+      },
+      {
+        "type": "gauge",
+        "title": "Avg Processing Time (1m)",
+        "id": 3,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "rate(document_processing_duration_seconds_sum[1m]) / rate(document_processing_duration_seconds_count[1m])"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 6
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "min": 0,
+            "color": {
+              "mode": "palette-classic"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "orange",
+                  "value": 2
+                },
+                {
+                  "color": "red",
+                  "value": 5
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ],
+            "fields": "",
+            "values": false
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Processing Duration Distribution",
+        "id": 4,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "rate(document_processing_duration_seconds_bucket[1m])",
+            "legendFormat": "le={{le}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 12
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": {
+              "mode": "palette-classic"
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single"
+          }
+        }
+      }
+    ]
+  },
+  "overwrite": true
+}

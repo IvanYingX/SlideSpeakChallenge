@@ -1,9 +1,7 @@
 """
-Document processor service - NEEDS IMPLEMENTATION
+Document processor service
 
-This module contains the core document processing logic.
-Candidates should implement the functions below to create an efficient
-document processing pipeline.
+This module contains the core document processing logic and metrics integration.
 """
 
 from typing import List, Dict, Any, Callable, Coroutine, Optional
@@ -18,8 +16,10 @@ from app.services.ai_service import (
 )
 from app.models.errors import AIServiceError
 from app.state.document_store import document_store
+from app.utils.metrics import DOCUMENTS_PROCESSED, DOCUMENT_ERRORS, PROCESSING_DURATION
 
 logger = logging.getLogger(__name__)
+
 
 async def chunk_document(text: str, chunk_size: int = 1000) -> List[str]:
     """
@@ -32,8 +32,7 @@ async def chunk_document(text: str, chunk_size: int = 1000) -> List[str]:
     Returns:
         List of text chunks
     """
-    # Your implementation here
-    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+    return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
 
 
 async def process_document(
@@ -43,12 +42,7 @@ async def process_document(
     progress_callback: Callable[[ProgressUpdate], Coroutine[Any, Any, None]],
 ) -> AnalysisResult:
     """
-    Process a document through the entire pipeline:
-    1. Extract text from document
-    2. Split into chunks
-    3. Analyze each chunk
-    4. Extract key insights
-    5. Combine results
+    Process a document through the entire pipeline.
 
     Args:
         file_content: Raw bytes of the uploaded file
@@ -59,126 +53,121 @@ async def process_document(
     Returns:
         AnalysisResult object with the complete analysis
     """
-    # Caching
     entry = document_store.get(document_id)
     if entry and entry.get("status") == "complete":
         return entry["result"]
-    try:
-        start_time = time.time()
-        await progress_callback(ProgressUpdate(
-            document_id=document_id,
-            progress=0.0,
-            status="processing",
-            message="Extracting text from document",
-        ))
-        text = await extract_text_from_document(file_content)
 
-        chunks = await chunk_document(text)
+    with PROCESSING_DURATION.time():
+        try:
+            start_time = time.time()
 
-        analysis_results = []
-        for i, chunk in enumerate(chunks):
             await progress_callback(ProgressUpdate(
                 document_id=document_id,
-                progress=0.1 + (i / len(chunks) * 0.7),
-                status="analyzing",
-                message=f"Analyzing text chunk {i + 1} of {len(chunks)}",
+                progress=0.0,
+                status="processing",
+                message="Extracting text from document",
             ))
-            analysis = await analyze_text_chunk(chunk)
-            analysis_results.append(analysis)
 
-        await progress_callback(ProgressUpdate(
-            document_id=document_id,
-            progress=0.8,
-            status="analyzing",
-            message="Extracting key insights",
-        ))
-        key_insights: List[KeyInsight] = []
-        for analysis in analysis_results:
-            insights = await extract_key_insights(analysis)
-            key_insights.extend(insights)
+            text = await extract_text_from_document(file_content)
+            chunks = await chunk_document(text)
 
-        # Combine results
-        result = AnalysisResult(
-            document_id=document_id,
-            filename=filename,
-            word_count=len(text.split()),
-            sentiment_score=analysis_results[0]["sentiment_score"],
-            topics=analysis_results[0]["topics"],
-            processing_time_seconds=time.time() - start_time,
-            key_insights=key_insights,
-        )
+            analysis_results = []
+            for i, chunk in enumerate(chunks):
+                await progress_callback(ProgressUpdate(
+                    document_id=document_id,
+                    progress=0.1 + (i / len(chunks) * 0.7),
+                    status="analyzing",
+                    message=f"Analyzing text chunk {i + 1} of {len(chunks)}",
+                ))
+                analysis = await analyze_text_chunk(chunk)
+                analysis_results.append(analysis)
 
-        document_store[document_id] = {
-            "status": "complete",
-            "result": result,
-            "completed_at": datetime.now(),
-            "error": None,
-        }
+            await progress_callback(ProgressUpdate(
+                document_id=document_id,
+                progress=0.8,
+                status="analyzing",
+                message="Extracting key insights",
+            ))
 
-        await progress_callback(ProgressUpdate(
-            document_id=document_id,
-            progress=1.0,
-            status="complete",
-            message="Document processed successfully",
-        ))
+            key_insights: List[KeyInsight] = []
+            for analysis in analysis_results:
+                insights = await extract_key_insights(analysis)
+                key_insights.extend(insights)
 
-        return result
-    
-    except AIServiceError as e:
-        error_message = str(e)
-        print("Error: ", error_message)
-        result = AnalysisResult(
-            document_id=document_id,
-            filename=filename,
-            word_count=0,
-            processing_time_seconds=time.time() - start_time,
-            key_insights=[],
-            error=error_message,
-        )
+            result = AnalysisResult(
+                document_id=document_id,
+                filename=filename,
+                word_count=len(text.split()),
+                sentiment_score=analysis_results[0]["sentiment_score"],
+                topics=analysis_results[0]["topics"],
+                processing_time_seconds=time.time() - start_time,
+                key_insights=key_insights,
+            )
 
-        document_store[document_id] = {
-            "status": "error",
-            "result": result,
-            "completed_at": datetime.now(),
-            "error": error_message,
-        }
+            document_store[document_id] = {
+                "status": "complete",
+                "result": result,
+                "completed_at": datetime.now(),
+                "error": None,
+            }
 
-        await progress_callback(ProgressUpdate(
-            document_id=document_id,
-            progress=1.0,
-            status="error",
-            message=error_message,
-        ))
+            DOCUMENTS_PROCESSED.inc()
 
-        return result
+            await progress_callback(ProgressUpdate(
+                document_id=document_id,
+                progress=1.0,
+                status="complete",
+                message="Document processed successfully",
+            ))
 
-    except Exception as e:
-        error_message = f"Error processing document: {e}"
+            return result
 
-        result = AnalysisResult(
-            document_id=document_id,
-            filename=filename,
-            word_count=0,
-            processing_time_seconds=time.time() - start_time,
-            key_insights=[],
-            error=error_message,
-        )
+        except AIServiceError as e:
+            DOCUMENT_ERRORS.inc()
+            return await _handle_error(
+                document_id, filename, start_time, str(e), progress_callback
+            )
 
-        document_store[document_id] = {
-            "status": "error",
-            "result": result,
-            "completed_at": datetime.now(),
-            "error": error_message,
-        }
+        except Exception as e:
+            DOCUMENT_ERRORS.inc()
+            return await _handle_error(
+                document_id, filename, start_time, f"Error processing document: {e}", progress_callback
+            )
 
-        await progress_callback(ProgressUpdate(
-            document_id=document_id,
-            progress=1.0,
-            status="error",
-            message=error_message,
-        ))
 
-        return result
+async def _handle_error(
+    document_id: str,
+    filename: str,
+    start_time: float,
+    error_message: str,
+    progress_callback: Callable[[ProgressUpdate], Coroutine[Any, Any, None]],
+) -> AnalysisResult:
+    logger.error(f"Document {document_id} failed: {error_message}")
+
+    result = AnalysisResult(
+        document_id=document_id,
+        filename=filename,
+        word_count=0,
+        processing_time_seconds=time.time() - start_time,
+        key_insights=[],
+        error=error_message,
+    )
+
+    document_store[document_id] = {
+        "status": "error",
+        "result": result,
+        "completed_at": datetime.now(),
+        "error": error_message,
+    }
+
+    await progress_callback(ProgressUpdate(
+        document_id=document_id,
+        progress=1.0,
+        status="error",
+        message=error_message,
+    ))
+
+    return result
 
 
 async def get_document_status(document_id: str) -> Optional[Dict[str, Any]]:
@@ -191,7 +180,6 @@ async def get_document_status(document_id: str) -> Optional[Dict[str, Any]]:
     Returns:
         Document status information
     """
-    # Your implementation here
     if document_id not in document_store:
         raise KeyError(f"Document with ID {document_id} not found.")
     return document_store[document_id]

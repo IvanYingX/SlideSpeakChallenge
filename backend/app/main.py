@@ -4,10 +4,14 @@ import logging
 from app.routes import root, documents, health, dashboard
 from app.utils.error_handlers import setup_exception_handlers
 import uvicorn
-# Logging
+from prometheus_fastapi_instrumentator import Instrumentator
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 app = FastAPI(title="AI Document Analyzer API")
 
+instrumentator = Instrumentator()
+instrumentator.instrument(app).expose(app)
+# instrumentator.instrument(app)
 # Middleware
 app.add_middleware(
     CORSMiddleware,
