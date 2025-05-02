@@ -29,9 +29,9 @@ docker-compose up --build
 This will launch the following services:
 
 - FastAPI backend at http://localhost:8000
-- React frontend at http://localhost:3000
+- React frontend at http://localhost:5173
 - Prometheus at http://localhost:9090
-- Grafana at http://localhost:3001
+- Grafana at http://localhost:3000
 
 ## Usage
 
@@ -55,7 +55,7 @@ The FastAPI service exposes metrics at `/metrics`. Prometheus scrapes this endpo
 ### Accessing the Dashboard
 
 - Prometheus: http://localhost:9090
-- Grafana: http://localhost:3001  
+- Grafana: http://localhost:3000
   Default credentials:
   - Username: `admin`
   - Password: `admin`
