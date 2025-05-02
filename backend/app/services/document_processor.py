@@ -60,8 +60,9 @@ async def process_document(
         AnalysisResult object with the complete analysis
     """
     # Caching
-    if document_id in document_store:
-        return document_store[document_id]["result"]
+    entry = document_store.get(document_id)
+    if entry and entry.get("status") == "complete":
+        return entry["result"]
     try:
         start_time = time.time()
         await progress_callback(ProgressUpdate(
@@ -111,6 +112,7 @@ async def process_document(
             "status": "complete",
             "result": result,
             "completed_at": datetime.now(),
+            "error": None,
         }
 
         await progress_callback(ProgressUpdate(
@@ -138,6 +140,7 @@ async def process_document(
             "status": "error",
             "result": result,
             "completed_at": datetime.now(),
+            "error": error_message,
         }
 
         await progress_callback(ProgressUpdate(
@@ -165,6 +168,7 @@ async def process_document(
             "status": "error",
             "result": result,
             "completed_at": datetime.now(),
+            "error": error_message,
         }
 
         await progress_callback(ProgressUpdate(

@@ -22,6 +22,8 @@ const UploadView: React.FC = () => {
     updates,
     isConnected,
     error: wsError,
+    disconnect,
+    reconnect,
   } = useDocumentProgress(documentId);
 
   // Handle file upload
@@ -101,6 +103,7 @@ const UploadView: React.FC = () => {
 
   // Reset the app
   const handleReset = () => {
+    disconnect();
     setDocumentId(null);
     setDocumentStatus(null);
     setError(null);
@@ -159,6 +162,7 @@ const UploadView: React.FC = () => {
                     message={progressMessage}
                     handleReset={handleReset}
                     handleRetry={handleRetry}
+                    handleReconnect={reconnect}
                   />
                   {documentStatus.status !== 'error' && (
                     <p className="text-sm text-gray-500 text-center mt-6">
@@ -171,7 +175,7 @@ const UploadView: React.FC = () => {
               {documentStatus?.result && (
                 // Show results when complete
                 <div>
-                  <ResultsView result={documentStatus.result} />
+                  <ResultsView result={documentStatus.result} disconnect={disconnect} />
                   <ResetButton handleReset={handleReset} />
                 </div>
               )}

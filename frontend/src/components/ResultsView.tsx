@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useEffect} from 'react';
 import { AnalysisResult } from '../types';
 import KeyInsights from './KeyInsights';
-
 interface ResultsViewProps {
   result: AnalysisResult;
+  disconnect: () => void;
 }
 
-const ResultsView: React.FC<ResultsViewProps> = ({ result }) => {
+const ResultsView: React.FC<ResultsViewProps> = ({ result, disconnect }) => {
+  useEffect(() => {
+    disconnect();
+  }, []);
+
   if (result.error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">

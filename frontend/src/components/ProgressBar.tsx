@@ -8,6 +8,7 @@ interface ProgressBarProps {
   message: string | null;
   handleReset: () => void;
   handleRetry: () => void;
+  handleReconnect: () => void;
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -17,6 +18,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   message,
   handleReset,
   handleRetry,
+  handleReconnect,
 }) => {
   const normalizedProgress = Math.min(Math.max(progress || 0, 0), 1);
   const percent = Math.round(normalizedProgress * 100);
@@ -76,6 +78,16 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
       {/* Progress bar */}
       <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+      {!isConnected && status !== 'complete' && status !== 'error' && (
+        <div className="text-center mb-3">
+          <button
+            onClick={handleReconnect}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Reconnect to live updates
+          </button>
+        </div>
+      )}
         <div
           className={`h-2.5 rounded-full ${currentStatus.color} transition-all duration-300 ease-in-out`}
           style={{ width: `${percent}%` }}

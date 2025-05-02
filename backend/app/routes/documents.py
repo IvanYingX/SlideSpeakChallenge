@@ -27,7 +27,19 @@ async def upload_document(file: UploadFile = File(...), background_tasks: Backgr
 
         file_content = await file.read()
         document_id = compute_file_hash(file_content)
-        print(f"Document ID: {document_id}")
+
+        entry = document_store.get(document_id)
+        if entry:
+            if entry.get("status") == "complete":
+                return {
+                    "document_id": document_id,
+                    "status": "complete"
+                }
+            if entry.get("status") == "processing":
+                return {
+                    "document_id": document_id,
+                    "status": "processing"
+                }
 
         async def progress_callback(update: ProgressUpdate):
             if document_id in progress_listeners:
@@ -62,11 +74,22 @@ async def websocket_endpoint(websocket: WebSocket, document_id: str):
 
     if document_id in document_store:
         result_entry = document_store[document_id]
+        status = result_entry["status"]
+        if status == "complete":
+            message = "Document already processed"
+            progress = 1.0
+        elif status == "error":
+            message = result_entry.get("error", "Previous attempt failed")
+            progress = 0.0
+        else:
+            message = "Document is unknown"
+            progress = 0.0
+
         await websocket.send_json(json_safe({
             "document_id": document_id,
-            "status": result_entry.get("status", "unknown"),
-            "progress": 1.0 if result_entry["status"] == "complete" else 0.0,
-            "message": "Document already processed",
+            "status": status,
+            "progress": progress,
+            "message": message,
         }))
 
     try:
