@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { DocumentStatus } from '../types';
+import { DashboardStats, DocumentEntry, DocumentStatus } from '../types';
 
 // Configure API base URL - should be environment variable in production
 const API_BASE_URL = 'http://localhost:8000';
@@ -52,6 +52,36 @@ export const getDocumentStatus = async (
   } catch (error: any) {
     console.error('Status check failed:', error);
     throw new Error(error.response?.data?.error ?? 'Failed to get document status');
+  }
+};
+
+/**
+ * Get dashboard stats
+ *
+ * @returns Dashboard stats
+ */
+export const getDashboardStats = async (): Promise<DashboardStats> => {
+  try {
+    const response = await api.get('/api/dashboard/stats');
+    return response.data as DashboardStats;
+  } catch (error: any) {
+    console.error('Dashboard stats fetch failed:', error);
+    throw new Error(error.response?.data?.error ?? 'Failed to fetch dashboard stats');
+  }
+};
+
+/**
+ * Get all documents
+ *
+ * @returns All documents
+ */
+export const getDocuments = async (): Promise<DocumentEntry[]> => {
+  try {
+    const response = await api.get('/api/dashboard/documents');
+    return response.data as DocumentEntry[];
+  } catch (error: any) {
+    console.error('Documents fetch failed:', error);
+    throw new Error(error.response?.data?.error ?? 'Failed to fetch documents');
   }
 };
 

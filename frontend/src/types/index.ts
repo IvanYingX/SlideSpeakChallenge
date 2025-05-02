@@ -38,3 +38,17 @@ export interface ApiError {
   status: number;
   message: string;
 }
+
+export interface DashboardStats {
+  total_documents: number;
+  completed: number;
+  errors: number;
+  average_processing_time: number;
+}
+
+export interface DocumentEntry {
+  document_id: string;
+  status: string;
+  filename?: string;
+  completed_at?: string;
+}
