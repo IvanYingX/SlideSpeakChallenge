@@ -63,6 +63,15 @@ export const useDocumentProgress = (documentId: string | null) => {
     };
   }, [connect, documentId]);
 
+  const disconnect = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.close();
+      socketRef.current = null;
+      setIsConnected(false);
+      setError(null);
+    }
+  }, []);
+
   // Reconnect function that can be called from components
   const reconnect = useCallback(() => {
     setError(null);
@@ -74,5 +83,6 @@ export const useDocumentProgress = (documentId: string | null) => {
     isConnected,
     error,
     reconnect,
+    disconnect,
   };
 };
