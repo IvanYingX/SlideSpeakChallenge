@@ -1,11 +1,19 @@
 from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException, WebSocket, WebSocketDisconnect
-import uuid, asyncio
+import asyncio
 from app.services.document_processor import process_document, get_document_status
 from app.models.schemas import ProgressUpdate
 from app.utils.json_safe import json_safe
+import hashlib
+from app.state.document_store import document_store
 
 router = APIRouter(tags=["documents"])
 progress_listeners = {}
+
+def compute_file_hash(file_content: bytes) -> str:
+    """
+    Compute a hash of the file content
+    """
+    return hashlib.sha256(file_content).hexdigest()
 
 @router.post("/api/documents")
 async def upload_document(file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):
@@ -17,8 +25,9 @@ async def upload_document(file: UploadFile = File(...), background_tasks: Backgr
         if file.content_type not in ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"]:
             raise HTTPException(status_code=400, detail={"error": "File must be a PDF, DOCX, or TXT"})
 
-        document_id = str(uuid.uuid4())
         file_content = await file.read()
+        document_id = compute_file_hash(file_content)
+        print(f"Document ID: {document_id}")
 
         async def progress_callback(update: ProgressUpdate):
             if document_id in progress_listeners:
@@ -47,8 +56,18 @@ async def websocket_endpoint(websocket: WebSocket, document_id: str):
     Websocket endpoint for real-time progress updates
     """
     await websocket.accept()
+
     if document_id not in progress_listeners:
         progress_listeners[document_id] = asyncio.Queue()
+
+    if document_id in document_store:
+        result_entry = document_store[document_id]
+        await websocket.send_json(json_safe({
+            "document_id": document_id,
+            "status": result_entry.get("status", "unknown"),
+            "progress": 1.0 if result_entry["status"] == "complete" else 0.0,
+            "message": "Document already processed",
+        }))
 
     try:
         while True:

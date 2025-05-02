@@ -17,13 +17,9 @@ from app.services.ai_service import (
     extract_text_from_document,
 )
 from app.models.errors import AIServiceError
+from app.state.document_store import document_store
 
 logger = logging.getLogger(__name__)
-
-
-# In-memory storage for document results
-# In a real application, this would be a database
-document_store: Dict[str, Any] = {}
 
 async def chunk_document(text: str, chunk_size: int = 1000) -> List[str]:
     """
@@ -63,7 +59,9 @@ async def process_document(
     Returns:
         AnalysisResult object with the complete analysis
     """
-    # Your implementation here
+    # Caching
+    if document_id in document_store:
+        return document_store[document_id]["result"]
     try:
         start_time = time.time()
         await progress_callback(ProgressUpdate(
